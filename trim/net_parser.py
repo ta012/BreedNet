@@ -43,13 +43,9 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
 
             params = 0
             if hasattr(module, "weight") and hasattr(module.weight, "size"):
-                print(module.stride)
-                exit('module')
-
                 params += torch.prod(torch.LongTensor(list(module.weight.size())))
                 summary[m_key]["trainable"] = module.weight.requires_grad
                 summary[m_key]["kernal"] = module.weight.size()
-                summary[m_key]["kernal"] = module.stride.si
 
             if hasattr(module, "bias") and hasattr(module.bias, "size"):
                 params += torch.prod(torch.LongTensor(list(module.bias.size())))
@@ -95,7 +91,6 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
     conv_inpout = []
     for layer in summary:
         print(summary[layer])
-        exit()
         
         print("layer",layer,summary[layer]['input_shape'][1],summary[layer]['output_shape'][1])
         if 'Conv2d' in layer:

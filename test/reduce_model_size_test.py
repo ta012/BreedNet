@@ -5,7 +5,10 @@ from torchsummary import summary
 
 import sys
 # insert at 1, 0 is the script path (or '' in REPL)
-sys.path.insert(1, '/home/tony/work/work1/myprojects/BreedNet/')
+sys.path.insert(1, '../')
+
+from config import DEVICE
+
 from trim.net_reducer import reduce_model_size
 
 class LeNet(nn.Module):
@@ -49,8 +52,8 @@ if __name__ == "__main__":
 
     # ####################################
 
-    n3 = torchvision.models.resnet18().cuda()
+    n3 = torchvision.models.resnet18().to(DEVICE)
     torch.save(n3.state_dict(),'original.pth')
     n3 = reduce_model_size(n3,(3,320,320))
-    n3 = n3.cuda()
+    n3 = n3.to(DEVICE)
     torch.save(n3.state_dict(),'size_reduced.pth')

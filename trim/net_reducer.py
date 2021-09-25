@@ -6,11 +6,16 @@ import torch.nn.functional as F
 from collections import OrderedDict
 import numpy as np
 import time
+
+import sys
+# insert at 1, 0 is the script path (or '' in REPL)
+sys.path.insert(1, '../')
+
 from .net_parser import parse_net 
 
 #######################
 from .layer_utils import InvertedResidual
-
+from config import DEVICE
 #######################
 class NetTrimmer:
 	def __init__(self) -> None:
@@ -49,7 +54,7 @@ def reduce_forward_time(model=None,input_size=(3, 320, 320)):
 	"""total forward time decreased"""
 	
 	redn_factor = 0.8
-	_,layer_data = parse_net(model, input_size=input_size)
+	_,layer_data = parse_net(model, input_size=input_size,device=DEVICE)
 	print(layer_data)
 	new_layers = []
 	for i,lay in enumerate(layer_data):
