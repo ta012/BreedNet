@@ -155,6 +155,6 @@ net,torchscript_and_info_json_path = mobilenet_breednet.train(train_loader=train
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-## ```System Requirements```s
+## ```System Requirements```
 * Nvidia Tesla P-100 and V-100 GPUs 
 * Ubuntu 18.04
