@@ -6,7 +6,7 @@ from breednet import BreedNet,model_size_estimater
 #### dataset 
 from SemCKD.dataset.cifar100 import get_cifar100_dataloaders, get_cifar100_dataloaders_sample
 
-train_loader, val_loader = get_cifar100_dataloaders(batch_size=256,
+train_loader, val_loader = get_cifar100_dataloaders(batch_size=512,
                                                                 num_workers=6)
 
 ### get input trained network
