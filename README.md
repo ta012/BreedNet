@@ -61,7 +61,7 @@ BreedNet trims the input network as per the size ``` reduction factor ``` value.
    ```
 2. Set up the environment
    ```sh
-   conda env create -f breenet_env.yml
+   conda env create -f breednet_env.yml
    ```
 
 ## ```Examples```
@@ -92,7 +92,7 @@ model.load_state_dict(torch.load('pretrained_models/resnet18_torchvision_cifar10
 print("Size of Input net",model_size_estimater(model))
 
 ## breednet object creation
-resnet_breednet = BreedNet(inp_net=model,redn_frac=0.5,gpu=False,train_epochs=1000,num_classes=100,input_size=(3,320,320))
+resnet_breednet = BreedNet(inp_net=model,redn_frac=0.5,gpu=True,train_epochs=1000,num_classes=100,input_size=(3,320,320))
 print(resnet_breednet)
 
 ## trim input network
@@ -154,3 +154,7 @@ net,torchscript_and_info_json_path = mobilenet_breednet.train(train_loader=train
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
+
+## ```System Requirements```s
+* Nvidia Tesla P-100 and V-100 GPUs 
+* Ubuntu 18.04
