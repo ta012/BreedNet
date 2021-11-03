@@ -71,34 +71,38 @@ BreedNet trims the input network as per the size ``` reduction factor ``` value.
 ```python
 import torch
 import torchvision
-import torchvision
 
-from params import args
-
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(DEVICE)
-if DEVICE == torch.device("cpu"):
-    args.gpu = False
-    
-print(args.gpu)
-# exit()
-from breednet import BreedNet
+from breednet import BreedNet,model_size_estimater
 from SemCKD.dataset.cifar100 import get_cifar100_dataloaders, get_cifar100_dataloaders_sample
 
-train_loader, val_loader = get_cifar100_dataloaders(batch_size=args.batch_size,
-                                                                num_workers=args.num_workers)
-iterator = iter(train_loader)
-data, _ = iterator.next()
+train_loader, val_loader = get_cifar100_dataloaders(batch_size=512,
+                                                                num_workers=6)
 
+### get input trained network
 model = torchvision.models.resnet18()
 
+
 model.fc = torch.nn.Linear(in_features=512, out_features=100, bias=True)
+## for cpu
+# model.load_state_dict(torch.load('pretrained_models/resnet18_torchvision_cifar100-196-best.pth',map_location=torch.device("cpu")))
+## for cuda
+model.load_state_dict(torch.load('pretrained_models/resnet18_torchvision_cifar100-196-best.pth'))
 
-model.load_state_dict(torch.load('pretrained_models/resnet18_torchvision-196-best.pth',map_location = torch.device(DEVICE)))
+print("Size of Input net",model_size_estimater(model))
 
-resnet_breednet = BreedNet(inp_net=model,redn_frac=0.5,gpu=args.gpu,train_epochs=1000,num_classes=100,input_size=(3,320,320))
+## breednet object creation
+resnet_breednet = BreedNet(inp_net=model,redn_frac=0.5,gpu=False,train_epochs=1000,num_classes=100,input_size=(3,320,320))
+print(resnet_breednet)
+
+## trim input network
 resnet_breednet.trim_net()
-net = resnet_breednet.train(train_loader=train_loader,val_loader=val_loader)
+## the trimmed network is accessible using resnet_breednet.out_net
+print("Size of trimmed net",model_size_estimater(resnet_breednet.out_net))
+
+## train the trimmed network and 
+## get best trimmed model and path of folder with best trimmed model torchscript and json with metrics information
+net,torchscript_and_info_json_path = resnet_breednet.train(train_loader=train_loader,val_loader=val_loader)
+
 ```
 
 2. Torchvision MobileNetV2 
@@ -106,43 +110,46 @@ net = resnet_breednet.train(train_loader=train_loader,val_loader=val_loader)
 ```python
 import torch
 import torchvision
-import torchvision
 
-from params import args
+from breednet import BreedNet,model_size_estimater
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(DEVICE)
-if DEVICE == torch.device("cpu"):
-    args.gpu = False
-    
-print(args.gpu)
-print(args.batch_size)
-
-# exit()
-from breednet import BreedNet
+#### dataset 
 from SemCKD.dataset.cifar100 import get_cifar100_dataloaders, get_cifar100_dataloaders_sample
 
-train_loader, val_loader = get_cifar100_dataloaders(batch_size=args.batch_size,
-                                                                num_workers=args.num_workers)
-iterator = iter(train_loader)
-data, _ = iterator.next()
+train_loader, val_loader = get_cifar100_dataloaders(batch_size=256,
+                                                                num_workers=6)
 
-model = torchvision.models.mobilenet_v2()
-model.classifier[1] = torch.nn.Linear(in_features=1280, out_features=100, bias=True)
+### get input trained network
+model = torchvision.models.mobilenet_v2(pretrained=False)
+model.classifier[1]=torch.nn.Linear(in_features=1280, out_features=100, bias=True)
+## cpu
+#model.load_state_dict(torch.load('pretrained_models/mobilenetv2_cifar100-124-best.pth',map_location=torch.device("cpu")))
+## gpu
+model.load_state_dict(torch.load('pretrained_models/mobilenetv2_cifar100-124-best.pth'))
 
-model.load_state_dict(torch.load('pretrained_models/mobilenetv2-124-best.pth',map_location = torch.device(DEVICE)))
+print("Size of Input net",model_size_estimater(model))
 
-resnet_breednet = BreedNet(inp_net=model,redn_frac=0.5,gpu=args.gpu,train_epochs=1000,num_classes=100,input_size=(3,320,320))
-print(resnet_breednet)
+## breednet object creation
+mobilenet_breednet = BreedNet(inp_net=model,redn_frac=0.75,gpu=True,train_epochs=1000,num_classes=100,input_size=(3,320,320))
+print(mobilenet_breednet)
 
-resnet_breednet.trim_net()
-net = resnet_breednet.train(train_loader=train_loader,val_loader=val_loader)
+## trim input network
+mobilenet_breednet.trim_net()
+## the trimmed network is accessible using mobilenet_breednet.out_net
+
+print("Size of trimmed net",model_size_estimater(mobilenet_breednet.out_net))
+
+## train the trimmed network and 
+## get best trimmed model and path of folder with best trimmed model torchscript and json with metrics information
+net,torchscript_and_info_json_path = mobilenet_breednet.train(train_loader=train_loader,val_loader=val_loader)
+
 ```
 
 <!-- ACKNOWLEDGMENTS -->
 ## ```Acknowledgments```
 
 * [SemCKD](https://github.com/DefangChen/SemCKD)
+* [The Lottery Ticket Hypothesis: Finding Sparse, Trainable Neural Networks](https://arxiv.org/abs/1803.03635)
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>

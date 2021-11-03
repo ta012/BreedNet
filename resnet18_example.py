@@ -11,8 +11,7 @@ train_loader, val_loader = get_cifar100_dataloaders(batch_size=512,
 model = torchvision.models.resnet18()
 
 
-model.fc = torch.nn.Linear(
-    in_features=512, out_features=100, bias=True)
+model.fc = torch.nn.Linear(in_features=512, out_features=100, bias=True)
 ## for cpu
 # model.load_state_dict(torch.load('pretrained_models/resnet18_torchvision_cifar100-196-best.pth',map_location=torch.device("cpu")))
 ## for cuda
@@ -26,6 +25,7 @@ print(resnet_breednet)
 
 ## trim input network
 resnet_breednet.trim_net()
+## the trimmed network is accessible using resnet_breednet.out_net
 print("Size of trimmed net",model_size_estimater(resnet_breednet.out_net))
 
 ## train the trimmed network and 
