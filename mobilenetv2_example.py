@@ -3,31 +3,25 @@ import torchvision
 
 from breednet import BreedNet,model_size_estimater
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-is_gpu = True
-if device == 'cpu':
-    is_gpu = False
 
 #### dataset 
 from SemCKD.dataset.cifar100 import get_cifar100_dataloaders, get_cifar100_dataloaders_sample
 
-train_loader, val_loader = get_cifar100_dataloaders(batch_size=256,
+train_loader, val_loader = get_cifar100_dataloaders(batch_size=512,
                                                                 num_workers=6)
 
 ### get input trained network
 model = torchvision.models.mobilenet_v2(pretrained=False)
 model.classifier[1]=torch.nn.Linear(in_features=1280, out_features=100, bias=True)
-if not is_gpu:
-    ## cpu
-    model.load_state_dict(torch.load('pretrained_models/mobilenetv2_cifar100-124-best.pth',map_location=torch.device("cpu")))
-else:
-    ## gpu
-    model.load_state_dict(torch.load('pretrained_models/mobilenetv2_cifar100-124-best.pth'))
+## cpu
+#model.load_state_dict(torch.load('pretrained_models/mobilenetv2_cifar100-124-best.pth',map_location=torch.device("cpu")))
+## gpu
+model.load_state_dict(torch.load('pretrained_models/mobilenetv2_cifar100-124-best.pth'))
 
 print("Size of Input net",model_size_estimater(model))
 
 ## breednet object creation
-mobilenet_breednet = BreedNet(inp_net=model,redn_frac=0.75,gpu=is_gpu,train_epochs=1000,num_classes=100,input_size=(3,320,320))
+mobilenet_breednet = BreedNet(inp_net=model,redn_frac=0.75,gpu=True,train_epochs=1000,num_classes=100,input_size=(3,320,320))
 print(mobilenet_breednet)
 
 ## trim input network
