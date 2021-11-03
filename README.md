@@ -47,6 +47,7 @@ We know that a larger network can easily fit the dataset than the smaller networ
 ## ```How?``` 
 BreedNet trims the input network as per the size ``` reduction factor ``` value. Then trains the trimmed model using the knowledge distillation with input model as teacher and trimmed model as stuent.
 
+* [Demo Video](https://www.youtube.com/watch?v=09w9tY3fwVE)
 ## ```Prerequisites```
 
 * python
