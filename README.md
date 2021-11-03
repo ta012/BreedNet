@@ -63,7 +63,7 @@ BreedNet trims the input network as per the size ``` reduction factor ``` value.
    conda env create -f breenet_env.yml
    ```
 
-## Examples
+## ```Examples```
 
 1. Torchvision Resnet18
 
