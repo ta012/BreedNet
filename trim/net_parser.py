@@ -9,16 +9,21 @@ from collections import OrderedDict
 import numpy as np
 import time
 
-def parse_net(model, input_size, batch_size=-1, device=torch.device('cuda:0'), dtypes=None):
-    result, params_info,conv_inpout = summary_string(
-        model, input_size, batch_size, device, dtypes)
-    print(result)
-    print(conv_inpout)
-
-    return params_info,conv_inpout
+conv2d_parms = [ 'in_channels', 'out_channels', 'kernel_size', 'stride', 'padding', 'dilation', 'groups', 'bias', 'padding_mode']
 
 
-def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0'), dtypes=None):
+def parse_net(model, input_size, batch_size=-1, device =None, dtypes=None):
+    """
+    Parse input network to get architecture information
+    """
+    summary = summary_string(model, input_size, batch_size, device, dtypes)
+
+    return summary
+
+    # return params_info,conv_inpout
+
+
+def summary_string(model, input_size, batch_size=-1, device=None, dtypes=None):
     if dtypes == None:
         dtypes = [torch.FloatTensor]*len(input_size)
 
@@ -28,28 +33,25 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
         def hook(module, input, output):
             class_name = str(module.__class__).split(".")[-1].split("'")[0]
             module_idx = len(summary)
+            # ['module','input_shape','output_shape','kernel_size']
+            info_dict = dict()
+            info_dict['module'] = str(module.__class__.__name__)
 
             m_key = "%s-%i" % (class_name, module_idx + 1)
-            summary[m_key] = OrderedDict()
-            summary[m_key]["input_shape"] = list(input[0].size())
-            summary[m_key]["input_shape"][0] = batch_size
-            if isinstance(output, (list, tuple)):
-                summary[m_key]["output_shape"] = [
-                    [-1] + list(o.size())[1:] for o in output
-                ]
-            else:
-                summary[m_key]["output_shape"] = list(output.size())
-                summary[m_key]["output_shape"][0] = batch_size
 
-            params = 0
-            if hasattr(module, "weight") and hasattr(module.weight, "size"):
-                params += torch.prod(torch.LongTensor(list(module.weight.size())))
-                summary[m_key]["trainable"] = module.weight.requires_grad
-                summary[m_key]["kernal"] = module.weight.size()
+            info_dict["input_shape"] = list(input[0].size())
 
-            if hasattr(module, "bias") and hasattr(module.bias, "size"):
-                params += torch.prod(torch.LongTensor(list(module.bias.size())))
-            summary[m_key]["nb_params"] = params
+            info_dict["output_shape"] = list(output.size())
+
+            if str(module.__class__.__name__) == 'Conv2d':
+                for j in conv2d_parms:
+                    # print(j)
+                    info_dict[j] = eval('module.'+j)
+            # print(module.__class__.__name__)
+            
+            if module.__class__.__name__ in dir(torch.nn):
+                summary.append(info_dict)
+            
 
         if (
             not isinstance(module, nn.Sequential)
@@ -65,8 +67,11 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
     x = [torch.rand(2, *in_size).type(dtype).to(device=device)
          for in_size, dtype in zip(input_size, dtypes)]
 
+
     # create properties
-    summary = OrderedDict()
+    # summary = OrderedDict()
+    summary = []
+
     hooks = []
 
     # register hook
@@ -75,6 +80,7 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
     # make a forward pass
     # print(x.shape)
     model(*x)
+
 
     # remove these hooks
     for h in hooks:
@@ -89,51 +95,15 @@ def summary_string(model, input_size, batch_size=-1, device=torch.device('cuda:0
     total_output = 0
     trainable_params = 0
     conv_inpout = []
-    for layer in summary:
-        print(summary[layer])
-        
-        print("layer",layer,summary[layer]['input_shape'][1],summary[layer]['output_shape'][1])
-        if 'Conv2d' in layer:
-          conv_inpout.append(('Conv2d',summary[layer]['input_shape'][1],summary[layer]['output_shape'][1]))
-        elif 'BatchNorm2d' in layer:
-          conv_inpout.append(('BatchNorm2d',summary[layer]['input_shape'][1],summary[layer]['output_shape'][1]))
-        # elif 'ReLU6' in layer:
-        #   conv_inpout.append(('ReLU6',summary[layer]['input_shape'][1],summary[layer]['output_shape'][1]))     
-        # elif 'ReLU' in layer:
-        #   conv_inpout.append(('ReLU',summary[layer]['input_shape'][1],summary[layer]['output_shape'][1]))    
-        # else:
-        # input_shape, output_shape, trainable, nb_params
-        line_new = "{:>20}  {:>25} {:>15}".format(
-            layer,
-            str(summary[layer]["output_shape"]),
-            "{0:,}".format(summary[layer]["nb_params"]),
-        )
-        total_params += summary[layer]["nb_params"]
 
-        total_output += np.prod(summary[layer]["output_shape"])
-        if "trainable" in summary[layer]:
-            if summary[layer]["trainable"] == True:
-                trainable_params += summary[layer]["nb_params"]
-        summary_str += line_new + "\n"
+    return summary
 
-    # assume 4 bytes/number (float on cuda).
-    total_input_size = abs(np.prod(sum(input_size, ()))
-                           * batch_size * 4. / (1024 ** 2.))
-    total_output_size = abs(2. * total_output * 4. /
-                            (1024 ** 2.))  # x2 for gradients
-    total_params_size = abs(total_params * 4. / (1024 ** 2.))
-    total_size = total_params_size + total_output_size + total_input_size
+    
+if __name__ == "__main__":
+    import torchvision
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    summary_str += "================================================================" + "\n"
-    summary_str += "Total params: {0:,}".format(total_params) + "\n"
-    summary_str += "Trainable params: {0:,}".format(trainable_params) + "\n"
-    summary_str += "Non-trainable params: {0:,}".format(total_params -
-                                                        trainable_params) + "\n"
-    summary_str += "----------------------------------------------------------------" + "\n"
-    summary_str += "Input size (MB): %0.2f" % total_input_size + "\n"
-    summary_str += "Forward/backward pass size (MB): %0.2f" % total_output_size + "\n"
-    summary_str += "Params size (MB): %0.2f" % total_params_size + "\n"
-    summary_str += "Estimated Total Size (MB): %0.2f" % total_size + "\n"
-    summary_str += "----------------------------------------------------------------" + "\n"
-    # return summary
-    return summary_str, (total_params, trainable_params),conv_inpout
+
+    n3 = torchvision.models.resnet18().to(DEVICE)
+    _= parse_net(n3, (3, 320, 320),device=DEVICE)
+    print()

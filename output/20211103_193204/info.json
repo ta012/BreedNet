@@ -1,0 +1,8 @@
+{
+    "test_loss": 2.113119811820984,
+    "test_acc": 57.44,
+    "test_acc_top5": 82.88,
+    "best_acc": 57.44,
+    "epoch": 170,
+    "pytorch_version": "1.7.0"
+}
